@@ -12,7 +12,8 @@ type HealthCheck struct {
 }
 
 func InsertHealthCheck(db *sql.DB) error {
-	query := "INSERT INTO health_check (datetime) VALUES (UTC_TIMESTAMP())"
+	// PostgreSQL uses CURRENT_TIMESTAMP instead of UTC_TIMESTAMP()
+	query := "INSERT INTO webapp.health_check (datetime) VALUES (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')"
 	_, err := db.Exec(query)
 	return err
 }

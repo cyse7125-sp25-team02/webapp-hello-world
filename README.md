@@ -1,6 +1,6 @@
 # Health Check API
 
-A simple health check endpoint implementation in Go that records each check in a MySQL database.
+A simple health check endpoint implementation in Go that records each check in a Postgres database.
 
 ## Table of Contents
 
@@ -29,7 +29,7 @@ A simple health check endpoint implementation in Go that records each check in a
 ## Requirements
 
 - Go 1.21 or higher
-- MySQL 8.0 or higher
+- Postgres 9.6 or higher
 
 ## Project Structure
 
@@ -46,7 +46,7 @@ webapp-hello-world/
 │ ├── model/
 │ │ └── health.go # Database models
 │ └── database/
-│ └── mysql.go # Database connection
+│ └── postgres.go # Database connection
 ├── migrations/
 │ └── 001_create_health_check_table.sql
 ├── .env # Environment variables
@@ -74,7 +74,7 @@ Create a `.env` file in the project root:
 
 ```
 DB_HOST=localhost
-DB_PORT=3306
+DB_PORT=5432
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=healthdb
@@ -91,7 +91,6 @@ go mod init webapp-hello-world
 - Install required packages
 
 ```
-  go get github.com/go-sql-driver/mysql
   go get github.com/joho/godotenv
 ```
 
@@ -153,7 +152,7 @@ Content-Type: application/json
    - Response formatting
    - Error handling
 
-4. **mysql.go**: Database operations
+4. **postgres.go**: Database operations
    - Connection management
    - Query execution
    - Error handling
@@ -172,16 +171,16 @@ datetime DATETIME NOT NULL
 ### Manual Testing with curl
 
 - Successful health check
-  `curl -v http://localhost:8080/healthz`
+  `curl -v http://localhost:3000/healthz`
 
 - Test invalid method
-  `curl -v -X POST http://localhost:8080/healthz`
+  `curl -v -X POST http://localhost:3000/healthz`
 
 - Test with query parameters (should fail)
-  `curl -v "http://localhost:8080/healthz?param=value"`
+  `curl -v "http://localhost:3000/healthz?param=value"`
 
 - Test with payload (should fail)
-  `curl -v -X GET -d '{"test":"data"}' http://localhost:8080/healthz`
+  `curl -v -X GET -d '{"test":"data"}' http://localhost:3000/healthz`
 
 ### Expected Behaviors
 

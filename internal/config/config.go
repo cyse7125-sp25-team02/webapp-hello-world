@@ -26,10 +26,10 @@ func NewConfig() *Config {
 
 	return &Config{
 		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "3306"),
-		DBUser:     getEnv("DB_USER", "root"),
+		DBPort:     getEnv("DB_PORT", "5432"),
+		DBUser:     getEnv("DB_USER", "admin"),
 		DBPassword: getEnv("DB_PASSWORD", "password"),
-		DBName:     getEnv("DB_NAME", "healthdb"),
+		DBName:     getEnv("DB_NAME", "webapp"),
 	}
 }
 

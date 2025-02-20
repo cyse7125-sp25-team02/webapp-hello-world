@@ -12,7 +12,7 @@ import (
 func main() {
 	cfg := config.NewConfig()
 
-	db, err := database.NewMySQLConnection(cfg)
+	db, err := database.NewPostgresConnection(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -21,8 +21,8 @@ func main() {
 	healthHandler := handler.NewHealthHandler(db)
 	http.Handle("/healthz", healthHandler)
 
-	log.Println("Server starting on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	log.Println("Server starting on :3000")
+	if err := http.ListenAndServe(":3000", nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
