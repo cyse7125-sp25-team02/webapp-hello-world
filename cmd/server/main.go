@@ -18,11 +18,18 @@ func main() {
 	}
 	defer db.Close()
 
+	// Create a new ServeMux
+	mux := http.NewServeMux()
+
+	// Register handlers
 	healthHandler := handler.NewHealthHandler(db)
-	http.Handle("/healthz", healthHandler)
+	mux.Handle("/healthz", healthHandler)
+
+	userHandler := handler.NewUserHandler(db)
+	mux.Handle("/v1/user", userHandler)
 
 	log.Println("Server starting on :3000")
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	if err := http.ListenAndServe(":3000", mux); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
