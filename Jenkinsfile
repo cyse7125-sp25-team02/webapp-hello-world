@@ -16,7 +16,7 @@ pipeline {
                     
                     git branch: 'master', url: 'https://github.com/cyse7125-sp25-team02/webapp-hello-world', credentialsId: 'github-credentials'
                     
-                    sh 'go version'
+                    sh '/usr/local/go/bin/go version'
                     env.NEXT_VERSION = nextVersion(nonAnnotatedTag: true)
                     echo "Next version determined by plugin: ${env.NEXT_VERSION}"
                 }
