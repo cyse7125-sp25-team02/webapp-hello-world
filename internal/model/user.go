@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -55,6 +56,12 @@ func (r *CreateUserRequest) Validate() error {
 	}
 	if r.Email == "" {
 		return errors.New("email is required")
+	}
+
+	// Email format validation using regex
+	emailRegex := regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`)
+	if !emailRegex.MatchString(r.Email) {
+		return errors.New("invalid email format")
 	}
 
 	return nil
