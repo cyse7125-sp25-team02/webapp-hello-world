@@ -4,8 +4,6 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
         DOCKER_IMAGE = "karanthakkar09/webapp-hello-world"
-        GO_HOME = tool 'go1.24'
-        PATH = "$GO_HOME/bin:$PATH"
     }
 
     tools {
@@ -22,6 +20,10 @@ pipeline {
 
                     git branch: 'master', url: 'https://github.com/cyse7125-sp25-team02/webapp-hello-world', credentialsId: 'github-credentials'
 
+                    def goPath = sh(script: 'which go', returnStdout: true).trim()
+                    def goBinDir = goPath.substring(0, goPath.lastIndexOf('/'))
+                    env.PATH = "${goBinDir}:${env.PATH}"
+                    
                     sh 'go version'
                     env.NEXT_VERSION = nextVersion(nonAnnotatedTag: true)
                     echo "Next version determined by plugin: ${env.NEXT_VERSION}"
