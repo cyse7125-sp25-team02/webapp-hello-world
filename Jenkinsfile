@@ -15,7 +15,7 @@ pipeline {
                     sh 'git config --global user.name "Jenkins"'
                     
                     git branch: 'master', url: 'https://github.com/cyse7125-sp25-team02/webapp-hello-world', credentialsId: 'github-credentials'
-                    env.NEXT_VERSION = nextVersion(tagPattern: '(.*)', projectType: 'node')
+                    env.NEXT_VERSION = nextVersion(nonAnnotatedTag: true)
                 }
             }
         }
