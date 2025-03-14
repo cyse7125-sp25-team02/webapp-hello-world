@@ -4,6 +4,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
         DOCKER_IMAGE = "karanthakkar09/webapp-hello-world"
+        PATH+GO = "/usr/local/go/bin"
     }
     
     stages {
