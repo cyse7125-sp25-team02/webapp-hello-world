@@ -1,11 +1,15 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
         DOCKER_IMAGE = "karanthakkar09/webapp-hello-world"
     }
-    
+
+    tools {
+        go 'go1.24'
+    }
+
     stages {
         stage('Prepare Workspace and Determine Next Version') {
             steps {
@@ -13,10 +17,10 @@ pipeline {
                     cleanWs()
                     sh 'git config --global user.email "jenkins@jkops.com"'
                     sh 'git config --global user.name "Jenkins"'
-                    
+
                     git branch: 'master', url: 'https://github.com/cyse7125-sp25-team02/webapp-hello-world', credentialsId: 'github-credentials'
-                    
-                    sh '/usr/local/go/bin/go version'
+
+                    sh 'go version'
                     env.NEXT_VERSION = nextVersion(nonAnnotatedTag: true)
                     echo "Next version determined by plugin: ${env.NEXT_VERSION}"
                 }
@@ -42,7 +46,7 @@ pipeline {
                 '''
             }
         }
-        
+
         stage('Login and Build') {
             steps {
                 sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
@@ -58,7 +62,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             sh 'docker logout'
