@@ -16,11 +16,9 @@ pipeline {
                     
                     git branch: 'master', url: 'https://github.com/cyse7125-sp25-team02/webapp-hello-world', credentialsId: 'github-credentials'
                     
-                    withEnv(["PATH=/usr/local/go/bin:${env.PATH}"]) {
-                        sh 'go version'   
-                        env.NEXT_VERSION = nextVersion(nonAnnotatedTag: true)
-                        echo "Next version determined by plugin: ${env.NEXT_VERSION}"
-                    }
+                    sh 'go version'
+                    env.NEXT_VERSION = nextVersion(nonAnnotatedTag: true)
+                    echo "Next version determined by plugin: ${env.NEXT_VERSION}"
                 }
             }
         }
