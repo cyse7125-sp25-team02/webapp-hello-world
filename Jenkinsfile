@@ -4,6 +4,8 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
         DOCKER_IMAGE = "karanthakkar09/webapp-hello-world"
+        GO_HOME = tool 'go1.24'
+        PATH = "$GO_HOME/bin:$PATH"
     }
 
     tools {
