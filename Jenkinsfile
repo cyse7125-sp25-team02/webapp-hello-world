@@ -4,7 +4,6 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
         DOCKER_IMAGE = "karanthakkar09/webapp-hello-world"
-        "PATH+GO" = "/usr/local/go/bin"
     }
     
     stages {
@@ -16,7 +15,11 @@ pipeline {
                     sh 'git config --global user.name "Jenkins"'
                     
                     git branch: 'master', url: 'https://github.com/cyse7125-sp25-team02/webapp-hello-world', credentialsId: 'github-credentials'
-                    env.NEXT_VERSION = nextVersion(nonAnnotatedTag: true)
+                    
+                    withEnv(["PATH=/usr/local/go/bin:${env.PATH}"]) {
+                        sh 'which go || echo "Go not found in PATH"'
+                        env.NEXT_VERSION = nextVersion(nonAnnotatedTag: true)
+                    }
                 }
             }
         }
