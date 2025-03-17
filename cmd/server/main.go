@@ -31,8 +31,9 @@ func main() {
 	instructorHandler := handler.NewInstructorHandler(db)
 	mux.Handle("/v1/instructor", instructorHandler)
 
-	courseHandler := handler.NewCourseHandler(db)
+	courseHandler := handler.NewCourseHandler(db, cfg)
 	mux.Handle("/v1/course", courseHandler)
+	mux.Handle("/v1/course/{course_id}/trace", courseHandler)
 
 	log.Println("Server starting on :3000")
 	if err := http.ListenAndServe(":3000", mux); err != nil {

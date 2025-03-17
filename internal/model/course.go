@@ -1,9 +1,11 @@
+// internal/model/course.go
 package model
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -43,6 +45,18 @@ type UpdateCourseRequest struct {
 	CourseID     *int       `json:"course_id,omitempty"`
 	SemesterYear *int       `json:"semester_year,omitempty"`
 	InstructorID *uuid.UUID `json:"instructor_id,omitempty"`
+}
+
+type Trace struct {
+	ID           uuid.UUID `json:"id"`
+	UserID       uuid.UUID `json:"user_id"`
+	InstructorID uuid.UUID `json:"instructor_id"`
+	Status       string    `json:"status"`
+	VectorID     *string   `json:"vector_id"`
+	FileName     string    `json:"file_name"`
+	BucketURL    string    `json:"bucket_url"`
+	DateCreated  time.Time `json:"date_created"`
+	DateUpdated  time.Time `json:"date_updated"`
 }
 
 func (r *CreateCourseRequest) Validate() error {
@@ -247,4 +261,104 @@ func DeleteCourseByID(db *sql.DB, courseID uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func InsertTrace(db *sql.DB, userID, instructorID uuid.UUID, status string, courseID uuid.UUID, vectorID *string, fileName, bucketURL string) error {
+	query := `
+        INSERT INTO webapp.traces (user_id, instructor_id, status, course_id, vector_id, file_name, bucket_url)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `
+	_, err := db.Exec(query, userID, instructorID, status, courseID, vectorID, fileName, bucketURL)
+	if err != nil {
+		log.Printf("Database error: %v", err)
+	}
+	return err
+}
+
+func GetTracesByCourseID(db *sql.DB, courseID uuid.UUID) ([]Trace, error) {
+	query := `
+        SELECT id, user_id, instructor_id, course_id, status, vector_id, file_name, bucket_url, date_created, date_updated
+        FROM webapp.traces
+        WHERE course_id = $1
+        ORDER BY date_created DESC
+    `
+
+	rows, err := db.Query(query, courseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var traces []Trace
+	for rows.Next() {
+		var trace Trace
+		var vectorID sql.NullString
+
+		err := rows.Scan(
+			&trace.ID,
+			&trace.UserID,
+			&trace.InstructorID,
+			&courseID,
+			&trace.Status,
+			&vectorID,
+			&trace.FileName,
+			&trace.BucketURL,
+			&trace.DateCreated,
+			&trace.DateUpdated,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if vectorID.Valid {
+			vectorIDStr := vectorID.String
+			trace.VectorID = &vectorIDStr
+		}
+
+		traces = append(traces, trace)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return traces, nil
+}
+
+func GetTraceByID(db *sql.DB, courseID, traceID uuid.UUID) (*Trace, error) {
+	query := `
+        SELECT id, user_id, instructor_id, course_id, status, vector_id, file_name, bucket_url, date_created, date_updated
+        FROM webapp.traces
+        WHERE course_id = $1 AND id = $2
+    `
+
+	var trace Trace
+	var vectorID sql.NullString
+
+	err := db.QueryRow(query, courseID, traceID).Scan(
+		&trace.ID,
+		&trace.UserID,
+		&trace.InstructorID,
+		&courseID,
+		&trace.Status,
+		&vectorID,
+		&trace.FileName,
+		&trace.BucketURL,
+		&trace.DateCreated,
+		&trace.DateUpdated,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("trace not found")
+		}
+		return nil, err
+	}
+
+	if vectorID.Valid {
+		vectorIDStr := vectorID.String
+		trace.VectorID = &vectorIDStr
+	}
+
+	return &trace, nil
 }

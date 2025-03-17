@@ -10,11 +10,13 @@ import (
 )
 
 type Config struct {
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
+	DBHost             string
+	DBPort             string
+	DBUser             string
+	DBPassword         string
+	DBName             string
+	GCSBucketName      string
+	GCSCredentialsFile string
 }
 
 func NewConfig() *Config {
@@ -25,11 +27,13 @@ func NewConfig() *Config {
 	}
 
 	return &Config{
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", "admin"),
-		DBPassword: getEnv("DB_PASSWORD", "password"),
-		DBName:     getEnv("DB_NAME", "webapp"),
+		DBHost:             getEnv("DB_HOST", "localhost"),
+		DBPort:             getEnv("DB_PORT", "5432"),
+		DBUser:             getEnv("DB_USER", "admin"),
+		DBPassword:         getEnv("DB_PASSWORD", "password"),
+		DBName:             getEnv("DB_NAME", "webapp"),
+		GCSBucketName:      getEnv("GCS_BUCKET_NAME", "bucket_name"),
+		GCSCredentialsFile: getEnv("GCS_CREDENTIALS_FILE", "credentials.json"),
 	}
 }
 

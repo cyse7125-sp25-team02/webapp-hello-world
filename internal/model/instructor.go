@@ -1,3 +1,4 @@
+// internal/model/instructor.go
 package model
 
 import (
