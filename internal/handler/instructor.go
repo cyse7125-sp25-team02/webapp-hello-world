@@ -59,7 +59,7 @@ func (h *InstructorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		h.createInstructor(w, r, user)
 	case http.MethodDelete:
-		h.DeleteInstructor(w, r)
+		h.DeleteInstructorByID(w, r)
 	case http.MethodPatch:
 		h.PatchInstructor(w, r)
 	default:
@@ -138,7 +138,7 @@ func (h *InstructorHandler) GetInstructorByID(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(instructor)
 }
 
-func (h *InstructorHandler) DeleteInstructor(w http.ResponseWriter, r *http.Request) {
+func (h *InstructorHandler) DeleteInstructorByID(w http.ResponseWriter, r *http.Request) {
 	// Get the instructor ID from query parameter
 	instructorID := r.URL.Query().Get("id")
 

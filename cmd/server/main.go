@@ -31,6 +31,9 @@ func main() {
 	instructorHandler := handler.NewInstructorHandler(db)
 	mux.Handle("/v1/instructor", instructorHandler)
 
+	courseHandler := handler.NewCourseHandler(db)
+	mux.Handle("/v1/course", courseHandler)
+
 	log.Println("Server starting on :3000")
 	if err := http.ListenAndServe(":3000", mux); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
