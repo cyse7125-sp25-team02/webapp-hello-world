@@ -38,78 +38,43 @@ func NewCourseHandler(db *sql.DB, cfg *config.Config) *CourseHandler {
 	}
 }
 
-func (h *CourseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Course handler hit:", r.Method, r.URL.Path)
-	w.Header().Set("Content-Type", "application/json")
-
-	// Allow requests without authentication
-	if r.Method == http.MethodGet && !strings.Contains(r.URL.Path, "/trace") {
-		h.GetCourseByID(w, r)
-		return
-	}
-
-	// Perform basic authentication
+func (h *CourseHandler) authenticateRequest(w http.ResponseWriter, r *http.Request) (*model.User, error) {
 	username, password, hasAuth := r.BasicAuth()
 	if !hasAuth {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Course Authentication Required"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Authentication required"})
-		return
+		return nil, fmt.Errorf("authentication required")
 	}
 
 	// Authenticate the user
 	user, err := model.AuthenticateUser(h.db, username, password)
 	if err != nil {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Invalid Credentials"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid username or password"})
-		return
+		return nil, err
 	}
 
-	// Check if the user has admin privileges
+	// Check admin privileges
 	if user.Role != "admin" {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Insufficient permissions"})
+		return nil, fmt.Errorf("insufficient permissions")
+	}
+
+	return user, nil
+}
+
+func (h *CourseHandler) handleAuthError(w http.ResponseWriter, err error) {
+	w.Header().Set("WWW-Authenticate", `Basic realm="Course Authentication Required"`)
+	w.WriteHeader(http.StatusUnauthorized)
+	json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+}
+
+func (h *CourseHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// Authenticate user
+	user, err := h.authenticateRequest(w, r)
+	if err != nil {
+		h.handleAuthError(w, err)
 		return
 	}
 
-	switch r.Method {
-	case http.MethodGet:
-		if r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/trace") {
-			courseIDStr := r.PathValue("course_id")
-			if courseIDStr == "" {
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Missing course_id in URL"})
-				return
-			}
-			h.GetTracesByCourseID(w, r, courseIDStr)
-			return
-		}
-	case http.MethodPost:
-		// Handle trace upload
-		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/trace") {
-			// Get course_id from path
-			courseIDStr := r.PathValue("course_id")
-			if courseIDStr == "" {
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Missing course_id in URL"})
-				return
-			}
-			h.handleTraceUpload(w, r, user, courseIDStr)
-			return
-		}
-		h.createCourse(w, r, user)
-	case http.MethodDelete:
-		h.DeleteCourseByID(w, r)
-	case http.MethodPatch:
-		h.PatchCourse(w, r, user)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
-	}
-}
-
-func (h *CourseHandler) createCourse(w http.ResponseWriter, r *http.Request, user *model.User) {
 	var req model.CreateCourseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -178,6 +143,14 @@ func (h *CourseHandler) GetCourseByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CourseHandler) DeleteCourseByID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// Authenticate user
+	_, err := h.authenticateRequest(w, r)
+	if err != nil {
+		h.handleAuthError(w, err)
+		return
+	}
+
 	// Extract course ID from query parameters
 	courseIDStr := r.URL.Query().Get("id")
 	if courseIDStr == "" {
@@ -212,8 +185,15 @@ func (h *CourseHandler) DeleteCourseByID(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Course deleted successfully"})
 }
 
-// UpdateCourse handles the PATCH request to update a course.
-func (h *CourseHandler) PatchCourse(w http.ResponseWriter, r *http.Request, user *model.User) {
+func (h *CourseHandler) PatchCourse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// Authenticate user
+	user, err := h.authenticateRequest(w, r)
+	if err != nil {
+		h.handleAuthError(w, err)
+		return
+	}
+
 	// Extract course ID from query parameters
 	courseIDStr := r.URL.Query().Get("id")
 	if courseIDStr == "" {
@@ -267,7 +247,18 @@ func (h *CourseHandler) PatchCourse(w http.ResponseWriter, r *http.Request, user
 	json.NewEncoder(w).Encode(updatedCourse)
 }
 
-func (h *CourseHandler) handleTraceUpload(w http.ResponseWriter, r *http.Request, user *model.User, courseIDStr string) {
+func (h *CourseHandler) HandleTraceUpload(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// Authenticate user
+	user, err := h.authenticateRequest(w, r)
+	if err != nil {
+		h.handleAuthError(w, err)
+		return
+	}
+
+	// Extract course ID from path parameters
+	courseIDStr := r.PathValue("course_id")
+
 	// Parse the course ID
 	courseID, err := uuid.Parse(courseIDStr)
 	if err != nil {
@@ -369,7 +360,17 @@ func (h *CourseHandler) uploadToGCS(file io.Reader, filename string) (string, er
 	return fmt.Sprintf("https://storage.googleapis.com/%s/%s", h.bucketName, attrs.Name), nil
 }
 
-func (h *CourseHandler) GetTracesByCourseID(w http.ResponseWriter, r *http.Request, courseIDStr string) {
+func (h *CourseHandler) GetTracesByCourseID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// Authenticate user
+	_, err := h.authenticateRequest(w, r)
+	if err != nil {
+		h.handleAuthError(w, err)
+		return
+	}
+
+	// Extract course_id from path parameters
+	courseIDStr := r.PathValue("course_id")
 	// Parse the course ID
 	courseID, err := uuid.Parse(courseIDStr)
 	if err != nil {
@@ -391,9 +392,27 @@ func (h *CourseHandler) GetTracesByCourseID(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(map[string]interface{}{"data": traces})
 }
 
-// internal/handler/course.go
+func (h *CourseHandler) GetTraceByID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-func (h *CourseHandler) GetTraceByID(w http.ResponseWriter, r *http.Request, courseIDStr, traceIDStr string) {
+	// Authenticate user
+	user, err := h.authenticateRequest(w, r)
+	if err != nil {
+		h.handleAuthError(w, err)
+		return
+	}
+
+	// Check admin privileges
+	if user.Role != "admin" {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Insufficient permissions"})
+		return
+	}
+
+	// Extract course_id and trace_id from path parameters
+	courseIDStr := r.PathValue("course_id")
+	traceIDStr := r.PathValue("trace_id")
+
 	// Parse the course ID
 	courseID, err := uuid.Parse(courseIDStr)
 	if err != nil {
@@ -413,7 +432,7 @@ func (h *CourseHandler) GetTraceByID(w http.ResponseWriter, r *http.Request, cou
 	// Get trace from the database
 	trace, err := model.GetTraceByID(h.db, courseID, traceID)
 	if err != nil {
-		if err.Error() == "trace not found" {
+		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Trace not found"})
 			return
@@ -426,4 +445,52 @@ func (h *CourseHandler) GetTraceByID(w http.ResponseWriter, r *http.Request, cou
 	// Return the trace as JSON
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(trace)
+}
+
+func (h *CourseHandler) DeleteTraceByID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Authenticate user
+	_, err := h.authenticateRequest(w, r)
+	if err != nil {
+		h.handleAuthError(w, err)
+		return
+	}
+
+	// Extract course_id and trace_id from path parameters
+	courseIDStr := r.PathValue("course_id")
+	traceIDStr := r.PathValue("trace_id")
+
+	// Parse the course ID
+	courseID, err := uuid.Parse(courseIDStr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid course_id format"})
+		return
+	}
+
+	// Parse the trace ID
+	traceID, err := uuid.Parse(traceIDStr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid trace_id format"})
+		return
+	}
+
+	// Delete the trace from the database
+	err = model.DeleteTraceByID(h.db, courseID, traceID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Trace not found"})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to delete trace"})
+		return
+	}
+
+	// Return success response
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Trace deleted successfully"})
 }

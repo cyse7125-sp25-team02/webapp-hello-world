@@ -327,10 +327,10 @@ func GetTracesByCourseID(db *sql.DB, courseID uuid.UUID) ([]Trace, error) {
 
 func GetTraceByID(db *sql.DB, courseID, traceID uuid.UUID) (*Trace, error) {
 	query := `
-        SELECT id, user_id, instructor_id, course_id, status, vector_id, file_name, bucket_url, date_created, date_updated
-        FROM webapp.traces
-        WHERE course_id = $1 AND id = $2
-    `
+		SELECT id, user_id, instructor_id, status, vector_id, file_name, bucket_url, date_created, date_updated
+		FROM webapp.traces
+		WHERE course_id = $1 AND id = $2
+	`
 
 	var trace Trace
 	var vectorID sql.NullString
@@ -339,7 +339,6 @@ func GetTraceByID(db *sql.DB, courseID, traceID uuid.UUID) (*Trace, error) {
 		&trace.ID,
 		&trace.UserID,
 		&trace.InstructorID,
-		&courseID,
 		&trace.Status,
 		&vectorID,
 		&trace.FileName,
@@ -350,7 +349,7 @@ func GetTraceByID(db *sql.DB, courseID, traceID uuid.UUID) (*Trace, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("trace not found")
+			return nil, sql.ErrNoRows
 		}
 		return nil, err
 	}
@@ -361,4 +360,27 @@ func GetTraceByID(db *sql.DB, courseID, traceID uuid.UUID) (*Trace, error) {
 	}
 
 	return &trace, nil
+}
+
+func DeleteTraceByID(db *sql.DB, courseID, traceID uuid.UUID) error {
+	query := `
+		DELETE FROM webapp.traces
+		WHERE course_id = $1 AND id = $2
+	`
+
+	result, err := db.Exec(query, courseID, traceID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
