@@ -15,6 +15,7 @@ pipeline {
             steps {
                 script {
                     cleanWs()
+                    sh 'exit 1'
                     sh 'git config --global user.email "jenkins@jkops.com"'
                     sh 'git config --global user.name "Jenkins"'
 
