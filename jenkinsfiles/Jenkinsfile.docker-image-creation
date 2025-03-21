@@ -17,12 +17,25 @@ pipeline {
                         def output = sh(script: "npx semantic-release", returnStdout: true).trim()
                         echo "semantic-release output:\n${output}"
 
-                        def versionLine = output.split('\n').find { it.toLowerCase().contains("the next release version is") }
+                        def versionLine = output.split('\n').find { 
+                            it.toLowerCase().contains("the next release version is") 
+                        }
+                        
                         if (versionLine) {
                             env.APP_VERSION = versionLine.split(' ').last()
                             echo "New version set: ${env.APP_VERSION}"
                         } else {
-                            error "Failed to find the release version in the output."
+                            echo "No new version detected. Using latest existing version."
+                            sh 'git fetch --tags'
+                            env.APP_VERSION = sh(
+                                script: 'git describe --tags --abbrev=0 || true',
+                                returnStdout: true
+                            ).trim()
+                            
+                            if (!env.APP_VERSION) {
+                                error "No previous version found and no new version generated."
+                            }
+                            echo "Using existing version: ${env.APP_VERSION}"
                         }
                     }
                 }
@@ -45,10 +58,10 @@ pipeline {
                 script {
                     sh """
                         echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin
-                        docker buildx build \
-                            --platform linux/amd64,linux/arm64 \
-                            -t ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE_NAME}:${env.APP_VERSION} \
-                            -t ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE_NAME}:latest \
+                        docker buildx build \\
+                            --platform linux/amd64,linux/arm64 \\
+                            -t ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE_NAME}:${env.APP_VERSION} \\
+                            -t ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE_NAME}:latest \\
                             --push .
                     """
                 }
