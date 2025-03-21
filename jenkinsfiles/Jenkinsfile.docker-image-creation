@@ -14,6 +14,10 @@ pipeline {
                     sh 'npm install'
 
                     withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_TOKEN')]) {
+                        sh """
+                            git config --global credential.helper '!f() { echo "username=$GITHUB_USERNAME"; echo "password=$GITHUB_TOKEN"; }; f'
+                        """
+
                         def output = sh(script: "npx semantic-release", returnStdout: true).trim()
                         echo "semantic-release output:\n${output}"
 
