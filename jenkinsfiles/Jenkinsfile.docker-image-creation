@@ -5,6 +5,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
         DOCKER_IMAGE_NAME = "webapp-hello-world"
         DOCKERHUB_USERNAME = "karanthakkar09"
+        GITHUB_TOKEN = credentials('github-token')
     }
 
     stages {
