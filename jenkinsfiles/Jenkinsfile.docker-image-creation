@@ -8,14 +8,6 @@ pipeline {
     }
 
     stages {
-        // stage('Checkout') {
-        //     steps {
-        //         sh 'git config --global user.email "jenkins@jkops.com"'
-        //         sh 'git config --global user.name "Jenkins"'
-        //         git branch: 'master', url: 'https://github.com/cyse7125-sp25-team02/webapp-hello-world', credentialsId: 'github-credentials'
-        //     }
-        // }
-
         stage('Semantic Git Release') {
             steps {
                 script {
