@@ -25,3 +25,5 @@ go.work.sum
 .env
 *.log
 tmp/
+
+package-lock.json
