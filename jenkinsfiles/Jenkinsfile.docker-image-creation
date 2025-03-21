@@ -14,10 +14,12 @@ pipeline {
                     sh 'npm install'
 
                     withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_TOKEN')]) {
-                        sh """
-                            echo "https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
-                            git config --global credential.helper 'store --file ~/.git-credentials'
-                        """
+                        withEnv(["GIT_USER=${GITHUB_USERNAME}", "GIT_TOKEN=${GITHUB_TOKEN}"]) {
+                            sh '''
+                                echo "https://$GIT_USER:$GIT_TOKEN@github.com" > ~/.git-credentials
+                                git config --global credential.helper "store --file ~/.git-credentials"
+                            '''
+                        }
 
                         def output = sh(script: "npx semantic-release", returnStdout: true).trim()
                         echo "semantic-release output:\n${output}"
