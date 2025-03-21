@@ -9,18 +9,18 @@ pipeline {
     }
 
     stages {
-        stage('Configure Git Auth') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-                    sh '''
-                        # Disable command echo for security
-                        set +x
-                        echo "https://$GIT_USER:$GIT_TOKEN@github.com" > ~/.git-credentials
-                        git config --global credential.helper "store --file ~/.git-credentials"
-                    '''
-                }
-            }
-        }
+        // stage('Configure Git Auth') {
+        //     steps {
+        //         withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+        //             sh '''
+        //                 # Disable command echo for security
+        //                 set +x
+        //                 echo "https://$GIT_USER:$GIT_TOKEN@github.com" > ~/.git-credentials
+        //                 git config --global credential.helper "store --file ~/.git-credentials"
+        //             '''
+        //         }
+        //     }
+        // }
 
         stage('Semantic Git Release') {
             steps {
