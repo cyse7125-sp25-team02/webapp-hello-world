@@ -2,7 +2,7 @@
 
 A simple health check endpoint implementation in Go that records each check in a Postgres database.
 
-## Table of Contents
+## Table of Contents 
 
 - [Health Check API](#health-check-api)
   - [Table of Contents](#table-of-contents)
