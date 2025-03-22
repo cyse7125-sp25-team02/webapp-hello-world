@@ -13,25 +13,9 @@ pipeline {
             steps {
                 script {
                     sh 'npm install'
-
-                    def output = sh(script: "npx semantic-release", returnStdout: true).trim()
-                    echo "semantic-release output:\n${output}"
-
-                    def versionLine = output.split('\n').find { it.toLowerCase().contains("the next release version is") }
-                    
-                    if (versionLine) {
-                        env.APP_VERSION = versionLine.split(' ').last()
-                        echo "New version set: ${env.APP_VERSION}"
-                    } else {
-                        echo "No new version detected. Using latest existing version."
-                        sh 'git fetch --tags'
-                        env.APP_VERSION = sh(script: 'git describe --tags --abbrev=0 || true',returnStdout: true).trim()
-                        
-                        if (!env.APP_VERSION) {
-                            error "No previous version found and no new version generated."
-                        }
-                        echo "Using existing version: ${env.APP_VERSION}"
-                    }
+                    sh 'npx semantic-release'
+                    def appVersion = sh(script: 'node -p "require(\'./package.json\').version"', returnStdout: true).trim()
+                    env.APP_VERSION = appVersion
                 }
             }
         }
