@@ -14,8 +14,10 @@ pipeline {
                 script {
                     sh 'npm install'
                     sh 'npx semantic-release'
-                    def appVersion = sh(script: 'node -p "require(\'./package.json\').version"', returnStdout: true).trim()
-                    echo "App Version: ${appVersion}"
+                    sh 'git fetch --tags'
+                    def latestTag = sh(script: 'git describe --tags --abbrev=0', returnStdout: true).trim()
+                    def appVersion = latestTag.startsWith('v') ? latestTag.substring(1) : latestTag
+                    echo "Latest Tag: ${latestTag}, App Version: ${appVersion}"
                     env.APP_VERSION = appVersion
                 }
             }
