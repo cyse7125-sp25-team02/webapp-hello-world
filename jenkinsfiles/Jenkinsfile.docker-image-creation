@@ -15,6 +15,7 @@ pipeline {
                     sh 'npm install'
                     sh 'npx semantic-release'
                     def appVersion = sh(script: 'node -p "require(\'./package.json\').version"', returnStdout: true).trim()
+                    echo "App Version: ${appVersion}"
                     env.APP_VERSION = appVersion
                 }
             }
